@@ -1,17 +1,35 @@
-pimatic-plugin-template
+pimatic-lirc
 =======================
 
-See the [development guide](http://pimatic.org/guide/development/required-skills-readings/) for
-usage.
+This is a plugin to send and receive IR commands using the LIRC utiltiy.
+The plugin needs a working installation of lirc before it can be used [raspberry pi guide](http://alexba.in/blog/2013/01/06/setting-up-lirc-on-the-raspberrypi/).
 
-Some Tips:
+Configuration Plugin
+--------------------
+You can load the plugin by editing your `config.json` to include:
 
-###Adding package dependencies
-* You can add other package dependencies by running `npm install something --save`. With the `--save`
-  option npm will auto add the installed dependency in your `package.json`
-* You can always install all dependencies in the package.json with `npm install`
+    {
+      "plugin": "lirc"
+    }
 
-###Commit your changes to git
-* Add all edited files with `git add file`. For example: `git add package.json` then commit you changes 
-  with `git commit`.
-* After that you can push you commited work to github: `git push`
+Example:
+--------
+
+    if state of sonos-connect is equal to "play" then set lirc remote: AMP command: KEY_POWER
+
+
+Receiving IR commands
+---------------------
+
+If you want to be able to receive IR commands in Pimatic create an device like this:
+    {
+      "id": "lirc",
+      "class": "LircReceiver",
+      "name": "Lirc"
+    }
+
+Example:
+--------
+
+    if remote of lirc is equal to "samsung" and command of lirc is equal to "KEY_TV2" send prowl message:"TV2 on Samsung TV"
+    
