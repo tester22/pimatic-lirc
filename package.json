@@ -5,9 +5,10 @@
   "files": [
     "lirc.coffee",
     "README.md",
-    "lirc-config-schema.coffee"
+    "lirc-config-schema.coffee",
+    "device-config-schema.coffee"
   ],
-  "version": "0.0.1",
+  "version": "0.0.2",
   "homepage": "http://github.com/pimatic/pimatic",
   "repository": {
     "type": "git",
@@ -15,7 +16,8 @@
   },
   "configSchema": "lirc-config-schema.coffee",
   "dependencies": {
-	"lirc_node": "git://github.com/alexbain/lirc_node.git"
+	"lirc_node": "git://github.com/markstickley/lirc_node.git",
+	"lodash": "^3.5.0"
   },
   "peerDependencies": {
     "pimatic": "0.8.*"

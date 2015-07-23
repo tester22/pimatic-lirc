@@ -13,18 +13,34 @@ module.exports = (env) ->
 
   # Require the [lirc_node](https://github.com/alexbain/lirc_node) library
   lirc_node = require 'lirc_node'
+  fs = require "fs"
+  os = require "os"
+
+
 
   # ###LircPlugin class
   class LircPlugin extends env.plugins.Plugin
 
     init: (app, @framework, @config) =>
-      lirc_node.init()
+      lirc_node.init();
+      deviceConfigDef = require("./device-config-schema")
+      
+      # I know this isn't optimal but the init function of node_lirc needs some time before it is done.
+      # This makes the pimatic rule engine fail, at launch and the rules to be disabled.
+      setTimeout ( ->
+        fs.writeFile __("%s/cached_remotes_lirc.json", os.tmpdir()), JSON.stringify(lirc_node.remotes), (error) ->
+          env.logger.error("Error writing remote chache file.", error) if error
+      ), 10000
+      
       Promise.promisifyAll(lirc_node)
 
       @framework.ruleManager.addActionProvider(new LircActionProvider @framework, config)
-
-  # Create a instance of my plugin
-  LircPlugin = new LircPlugin()
+      @framework.deviceManager.registerDeviceClass("LircReceiver", {
+        configDef: deviceConfigDef.LircReceiver,
+        createCallback: (config) ->
+          device = new LircReceiver(config)
+          return device
+      })
 
   class LircActionProvider extends env.actions.ActionProvider
 
@@ -32,7 +48,10 @@ module.exports = (env) ->
       return
 
     parseAction: (input, context) =>
-    
+
+      # Load the cached remote file.
+      remoteList = {}
+      remoteList = require(__("%s/cached_remotes_lirc.json", os.tmpdir()))
       remote = ""
       command = ""
       match = null
@@ -42,10 +61,10 @@ module.exports = (env) ->
         .match(['lirc'])
 
       m.match [' remote: '], (m) ->
-        m.match _.keys(lirc_node.remotes), (next, r) ->
+        m.match _.keys(remoteList), (next, r) ->
           remote = r
           next.match [' command: '], (m) ->
-            m.match _.valuesIn(lirc_node.remotes[remote]), (m, c) ->
+            m.match _.valuesIn(remoteList[remote]), (m, c) ->
               command = c
               match = m.getFullMatch()
 
@@ -76,6 +95,41 @@ module.exports = (env) ->
       
 
   module.exports.LircActionHandler = LircActionHandler
+  
+  class LircReceiver extends env.devices.Sensor
+    remote: null
+    command: null
+  
+    attributes:
+      remote:
+        description: 'last remote used'
+        type: "string"
+      command:
+        description: 'last key pressed'
+        type: "string"
+  
+  
+    constructor: (@config) ->
+      @name = config.name
+      @id = config.id
+      super()
+      
+      @listenForIR()
+      
+    listenForIR: () ->
+      lirc_node.addListener (data) =>
+        env.logger.debug("Data received remote %s, command %s", data.remote, data.key)
+        @remote = data.remote
+        @command = data.key
+        @emit "remote", @remote
+        @emit "command", @command
+        
+    getRemote: -> Promise.resolve(@remote)
+    getCommand: -> Promise.resolve(@command)
+
+
+  # Create a instance of my plugin
+  lircPlugin = new LircPlugin()
 
   # and return it to the framework.
-  return LircPlugin
+  return lircPlugin
