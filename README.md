@@ -22,6 +22,7 @@ Receiving IR commands
 ---------------------
 
 If you want to be able to receive IR commands in Pimatic create an device like this:
+
     {
       "id": "lirc",
       "class": "LircReceiver",
