@@ -17,7 +17,10 @@
   "configSchema": "lirc-config-schema.coffee",
   "dependencies": {
 	"lirc_node": "git://github.com/markstickley/lirc_node.git",
-	"lodash": "^3.5.0"
+	"lodash": "^3.5.0",
+	"fs",
+	"os",
+	"lodash"
   },
   "peerDependencies": {
     "pimatic": "0.8.*"
