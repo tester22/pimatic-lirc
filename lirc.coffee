@@ -16,8 +16,6 @@ module.exports = (env) ->
   fs = require "fs"
   os = require "os"
 
-
-
   # ###LircPlugin class
   class LircPlugin extends env.plugins.Plugin
 
@@ -99,6 +97,7 @@ module.exports = (env) ->
   class LircReceiver extends env.devices.Sensor
     remote: null
     command: null
+    idleTime = 0
   
     attributes:
       remote:
@@ -113,8 +112,20 @@ module.exports = (env) ->
       @name = config.name
       @id = config.id
       super()
-      
+
       @listenForIR()
+      setInterval( ( => @resetLircOutput() ), 1000)
+
+    resetLircOutput: ->
+      if @command?
+        idleTime += 1
+        if idleTime > 60
+          @remote = null
+          @command = null
+          @emit "remote", @remote
+          @emit "command", @command
+          idleTime = 0
+          env.logger.debug("Resetting the lirc input to null")
       
     listenForIR: () ->
       lirc_node.addListener (data) =>
@@ -123,6 +134,7 @@ module.exports = (env) ->
         @command = data.key
         @emit "remote", @remote
         @emit "command", @command
+        idleTime = 0
         
     getRemote: -> Promise.resolve(@remote)
     getCommand: -> Promise.resolve(@command)
