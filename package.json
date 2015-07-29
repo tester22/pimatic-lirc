@@ -8,7 +8,7 @@
     "lirc-config-schema.coffee",
     "device-config-schema.coffee"
   ],
-  "version": "0.0.2",
+  "version": "0.0.3",
   "homepage": "http://github.com/pimatic/pimatic",
   "repository": {
     "type": "git",
@@ -19,8 +19,7 @@
 	"lirc_node": "git://github.com/markstickley/lirc_node.git",
 	"lodash": "^3.5.0",
 	"fs",
-	"os",
-	"lodash"
+	"os"
   },
   "peerDependencies": {
     "pimatic": "0.8.*"
