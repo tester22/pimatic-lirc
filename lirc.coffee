@@ -26,8 +26,9 @@ module.exports = (env) ->
       # I know this isn't optimal but the init function of node_lirc needs some time before it is done.
       # This makes the pimatic rule engine fail, at launch and the rules to be disabled.
       setTimeout ( ->
+        remoteList = lirc_node.remotes
         fs.writeFile __("%s/cached_remotes_lirc.json", os.tmpdir()), JSON.stringify(lirc_node.remotes), (error) ->
-          env.logger.error("Error writing remote chache file.", error) if error
+          env.logger.error("Error writing remote cache file.", error) if error
       ), 10000
       
       Promise.promisifyAll(lirc_node)
@@ -48,8 +49,8 @@ module.exports = (env) ->
     parseAction: (input, context) =>
 
       # Load the cached remote file.
-      remoteList = {}
-      remoteList = require(__("%s/cached_remotes_lirc.json", os.tmpdir()))
+      try remoteList = JSON.parse(fs.readFileSync(__("%s/cached_remotes_lirc.json", os.tmpdir()), "utf8"))
+      catch e then remoteList = {}
       remote = ""
       command = ""
       match = null
