@@ -16,6 +16,8 @@ module.exports = (env) ->
   fs = require "fs"
   os = require "os"
 
+
+
   # ###LircPlugin class
   class LircPlugin extends env.plugins.Plugin
 
@@ -26,14 +28,13 @@ module.exports = (env) ->
       # I know this isn't optimal but the init function of node_lirc needs some time before it is done.
       # This makes the pimatic rule engine fail, at launch and the rules to be disabled.
       setTimeout ( ->
-        remoteList = lirc_node.remotes
         fs.writeFile __("%s/cached_remotes_lirc.json", os.tmpdir()), JSON.stringify(lirc_node.remotes), (error) ->
           env.logger.error("Error writing remote cache file.", error) if error
       ), 10000
       
       Promise.promisifyAll(lirc_node)
 
-      @framework.ruleManager.addActionProvider(new LircActionProvider @framework, config)
+      @framework.ruleManager.addActionProvider(new LircActionProvider(@framework))
       @framework.deviceManager.registerDeviceClass("LircReceiver", {
         configDef: deviceConfigDef.LircReceiver,
         createCallback: (config) ->
@@ -49,8 +50,8 @@ module.exports = (env) ->
     parseAction: (input, context) =>
 
       # Load the cached remote file.
-      try remoteList = JSON.parse(fs.readFileSync(__("%s/cached_remotes_lirc.json", os.tmpdir()), "utf8"))
-      catch e then remoteList = {}
+      remoteList = {}
+      remoteList = require(__("%s/cached_remotes_lirc.json", os.tmpdir()))
       remote = ""
       command = ""
       match = null
@@ -98,7 +99,6 @@ module.exports = (env) ->
   class LircReceiver extends env.devices.Sensor
     remote: null
     command: null
-    idleTime = 0
   
     attributes:
       remote:
@@ -110,23 +110,11 @@ module.exports = (env) ->
   
   
     constructor: (@config) ->
-      @name = config.name
-      @id = config.id
+      @name = @config.name
+      @id = @config.id
       super()
-
+      
       @listenForIR()
-      setInterval( ( => @resetLircOutput() ), 1000)
-
-    resetLircOutput: ->
-      if @command?
-        idleTime += 1
-        if idleTime > 60
-          @remote = null
-          @command = null
-          @emit "remote", @remote
-          @emit "command", @command
-          idleTime = 0
-          env.logger.debug("Resetting the lirc input to null")
       
     listenForIR: () ->
       lirc_node.addListener (data) =>
@@ -135,7 +123,6 @@ module.exports = (env) ->
         @command = data.key
         @emit "remote", @remote
         @emit "command", @command
-        idleTime = 0
         
     getRemote: -> Promise.resolve(@remote)
     getCommand: -> Promise.resolve(@command)
